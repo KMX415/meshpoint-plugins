@@ -1,0 +1,203 @@
+{
+  "meshpoint_repo": 1,
+  "name": "Meshpoint Official (release candidate)",
+  "description": "Official optional plugins for Meshpoint v0.8.0 RC. Hardware validation varies by plugin; P25 is experimental.",
+  "plugins": [
+    {
+      "id": "acars",
+      "kind": "app",
+      "path": "apps/acars",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "Aircraft VHF datalink (ACARS) decoding via acarsdec + libacars",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/f00b4r0/acarsdec",
+      "has_setup": false,
+      "release_status": "release-candidate",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "adsb",
+      "kind": "app",
+      "path": "apps/adsb",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "Live ADS-B (1090 MHz) air traffic tracking via dump1090 -- aircraft table plus a live map",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/MalcolmRobb/dump1090",
+      "has_setup": false,
+      "release_status": "release-candidate",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "dab",
+      "kind": "app",
+      "path": "apps/dab",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "DAB/DAB+ digital radio via welle-cli -- channel scan, live tuning/playback, and per-channel display names",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/AlbrechtL/welle.io",
+      "has_setup": false,
+      "release_status": "release-candidate",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "p2000",
+      "kind": "app",
+      "path": "apps/p2000",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "Dutch emergency dispatch (P2000, FLEX on 169.65 MHz) decoding via rtl_fm + multimon-ng",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/EliasOenal/multimon-ng",
+      "has_setup": false,
+      "release_status": "release-candidate",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "p25",
+      "kind": "app",
+      "path": "apps/p25",
+      "version": "0.1.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "Optional P25 Phase I/II receiver with OP25 trunk tracking, talkgroup filtering and browser audio",
+      "author": "Meshpoint contributors",
+      "homepage": "https://github.com/boatbod/op25",
+      "has_setup": false,
+      "release_status": "experimental",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "pagers",
+      "kind": "app",
+      "path": "apps/pagers",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "POCSAG512/1200/2400 pager decoding on an explicitly selected receive frequency via rtl_fm + multimon-ng",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/EliasOenal/multimon-ng",
+      "has_setup": false,
+      "release_status": "release-candidate",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "pocsag",
+      "kind": "app",
+      "path": "apps/pocsag",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "POCSAG512/1200/2400 pager decoding on an explicitly selected receive frequency via rtl_fm + multimon-ng",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/EliasOenal/multimon-ng",
+      "has_setup": false,
+      "release_status": "release-candidate",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "radio",
+      "kind": "app",
+      "path": "apps/radio",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "FM/AM/SSB broadcast & utility radio listener via rtl_fm + ffmpeg, with RDS on FM via redsea -- Digital and Analogue display skins, a preset stations picker, and a Web Audio VU meter",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/KMX415/meshpoint",
+      "has_setup": false,
+      "release_status": "release-candidate",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "reticulum",
+      "kind": "app",
+      "path": "apps/reticulum",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "service",
+        "routes",
+        "sidebar",
+        "topbar"
+      ],
+      "description": "Native Reticulum/LXMF messaging -- meshpoint's own LXMF delivery destination on the local rnsd shared instance, the peer roster built from announces, the Reticulum page (Peers/Messages/Send/Settings) and a compact topbar pill.",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://reticulum.network",
+      "has_setup": true,
+      "release_status": "release-candidate"
+    },
+    {
+      "id": "rtl433",
+      "kind": "app",
+      "path": "apps/rtl433",
+      "version": "1.0.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "listener",
+        "routes",
+        "hook"
+      ],
+      "description": "Generic RTL-SDR OOK/FSK decoder (rtl_433) -- weather stations, TPMS, remote sensors, and hundreds of other 433/315/868 MHz devices",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/merbanan/rtl_433",
+      "has_setup": false,
+      "release_status": "release-candidate",
+      "hook_host": "rtlsdr"
+    },
+    {
+      "id": "rtlsdr",
+      "kind": "app",
+      "path": "apps/rtlsdr",
+      "version": "0.1.0",
+      "meshpoint_api": 1,
+      "provides": [
+        "sidebar"
+      ],
+      "description": "The RTL-SDR host page -- every RTL-SDR plugin (Radio, DAB+, P2000, Pagers, POCSAG, RTL433, ADS-B, ACARS) hooks its own tab into this page via the 'hook' seam instead of owning a page of its own.",
+      "author": "Einstein PD2EMC",
+      "homepage": "https://github.com/KMX415/meshpoint",
+      "has_setup": false,
+      "release_status": "release-candidate"
+    }
+  ],
+  "themes": []
+}
