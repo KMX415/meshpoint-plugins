@@ -16,3 +16,12 @@ The current adapter supports Band III DAB/DAB+ broadcasts. Local service
 availability determines whether scanning finds a multiplex. It is not a US
 broadcast-radio replacement. Verify `welle-cli` and `curl` as the service user
 and confirm real multiplex/audio reception before treating setup as complete.
+
+
+## Unattended listening
+
+Start reception, then enable **Keep running** to continue listening after
+leaving the tab. Administrators can change this setting without a restart;
+it is saved as `plugins.dab.keep_running`. Turning it off starts
+a fresh 10-minute idle timeout. The setting defaults off and does not start
+reception automatically after a reboot. Stop releases the shared dongle.

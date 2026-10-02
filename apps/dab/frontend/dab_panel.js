@@ -116,7 +116,14 @@ class DabPanel {
                 <div class="panel">
                     <div class="panel__header">
                         <span>Channel</span>
-                        <button type="button" class="terminal-button" data-dab-stop>Stop</button>
+                        <span class="pager-actions">
+                            <label class="pager-idle-toggle"
+                                   title="Keep the ensemble decoding with this tab closed (no 10-minute auto-stop). Holds the RTL-SDR dongle until you press Stop.">
+                                <input type="checkbox" data-dab-keep-running>
+                                Keep running
+                            </label>
+                            <button type="button" class="terminal-button" data-dab-stop>Stop</button>
+                        </span>
                     </div>
                     <div class="panel__body lsn-panel-body">
                         <div class="lsn-tabbar dab-chantabs" data-dab-chantabs>${this._chanTabsHtml()}</div>
@@ -128,6 +135,9 @@ class DabPanel {
         `;
         this._buildVuSegments();
         root.querySelector('[data-dab-stop]').addEventListener('click', () => this._stopEnsemble());
+        root.querySelector('[data-dab-keep-running]')
+            .addEventListener('change', (ev) => this._setKeepRunning(ev.target));
+        this._root.querySelector('[data-dab-keep-running]').disabled = !!window.meshpointReadOnly;
         root.querySelector('[data-dab-chantabs]').addEventListener('click', (ev) => {
             const btn = ev.target.closest('[data-chantab]');
             if (btn && !btn.disabled) this._switchChannelTab(btn.dataset.chantab);
@@ -686,6 +696,29 @@ class DabPanel {
         for (let i = 0; i < n; i++) segs[i].classList.toggle('on', i < lit);
     }
 
+    async _setKeepRunning(box) {
+        if (window.meshpointReadOnly) return;
+        box.disabled = true;
+        try {
+            const r = await fetch('/api/dab/keep-running', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ keep_running: box.checked }),
+            });
+            if (!r.ok) {
+                const err = await r.json().catch(() => ({}));
+                box.checked = !box.checked;
+                this._setStatus(false, err.detail || `HTTP ${r.status}`);
+            }
+        } catch (e) {
+            box.checked = !box.checked;
+            this._setStatus(false, e.message);
+        } finally {
+            box.disabled = !!window.meshpointReadOnly;
+            this._refresh();
+        }
+    }
+
     async _refresh() {
         try {
             const r = await fetch('/api/dab/status');
@@ -699,6 +732,9 @@ class DabPanel {
         if (!root) return;
         this._lastStatus = status;
         const busyOwner = (status.dongle_owner && status.dongle_owner !== 'dab') ? status.dongle_owner : null;
+
+        const keepBox = root.querySelector('[data-dab-keep-running]');
+        if (keepBox && !keepBox.disabled) keepBox.checked = !!status.keep_running;
 
         root.querySelectorAll('[data-chantab]').forEach((btn) => {
             const isChannelCode = this._channelPresets.some((c) => c.channel === btn.dataset.chantab);

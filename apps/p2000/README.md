@@ -16,3 +16,12 @@ P2000 is the Netherlands FLEX service at 169.65 MHz. The page is explicitly
 service-specific; this frequency is not a generic pager default for other
 regions. For manually chosen POCSAG reception, use the appropriate pager module.
 See [receiver regions](../../docs/PLUGINS.md#receiver-regions-and-local-channels).
+
+
+## Unattended listening
+
+Start reception, then enable **Keep running** to continue listening after
+leaving the tab. Administrators can change this setting without a restart;
+it is saved as `plugins.p2000.keep_running`. Turning it off starts
+a fresh 10-minute idle timeout. The setting defaults off and does not start
+reception automatically after a reboot. Stop releases the shared dongle.

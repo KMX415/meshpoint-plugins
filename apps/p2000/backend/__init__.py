@@ -16,4 +16,4 @@ def register(reg) -> None:
     from .routes import init_routes, router
 
     reg.add_router(router)
-    reg.add_listener("p2000", P2000Listener, init_routes)
+    reg.add_listener("p2000", lambda: P2000Listener(keep_running=reg.config.get("keep_running") is True), init_routes)

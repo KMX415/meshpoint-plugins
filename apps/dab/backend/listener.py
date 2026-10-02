@@ -58,7 +58,8 @@ _BENIGN_PREFIX_RE = re.compile(r"^ofdm-processor:", re.IGNORECASE)
 class DabListener:
     """Owns one welle-cli process decoding a DAB+ ensemble via its webserver API."""
 
-    def __init__(self) -> None:
+    def __init__(self, keep_running: bool = False) -> None:
+        self._keep_running = keep_running
         self._proc: Optional[asyncio.subprocess.Process] = None
         self._stderr_task: Optional[asyncio.Task] = None
         self._poll_task: Optional[asyncio.Task] = None
@@ -117,9 +118,25 @@ class DabListener:
             self.services = []
             self._last_error = ""
 
+    def set_keep_running(self, value: bool) -> None:
+        """Switch keep-running on/off, effective immediately: turning it off
+        while running starts the idle watchdog afresh (counting from now),
+        turning it on cancels a pending one. Call from the event loop."""
+        self._keep_running = bool(value)
+        if not self.running:
+            return
+        if self._keep_running:
+            if self._idle_task is not None:
+                self._idle_task.cancel()
+                self._idle_task = None
+        elif self._idle_task is None:
+            self._last_poll_at = time.monotonic()
+            self._idle_task = asyncio.get_running_loop().create_task(self._idle_watchdog())
+
     def status(self) -> dict:
         return {
             "running": self.running,
+            "keep_running": self._keep_running,
             "channel": self.channel,
             "ensemble_label": self.ensemble_label,
             "snr": round(self.snr, 1),
@@ -180,7 +197,8 @@ class DabListener:
         loop = asyncio.get_running_loop()
         self._stderr_task = loop.create_task(self._stderr_loop(self._proc))
         self._poll_task = loop.create_task(self._mux_poll_loop())
-        self._idle_task = loop.create_task(self._idle_watchdog())
+        if not self._keep_running:
+            self._idle_task = loop.create_task(self._idle_watchdog())
         self._last_poll_at = time.monotonic()
 
     async def _start_locked_retrying(self) -> None:

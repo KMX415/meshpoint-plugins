@@ -16,4 +16,4 @@ def register(reg) -> None:
     from .routes import init_routes, router
 
     reg.add_router(router)
-    reg.add_listener("pagers", lambda: PagersListener(frequency_mhz=reg.config.get("frequency_mhz")), init_routes)
+    reg.add_listener("pagers", lambda: PagersListener(frequency_mhz=reg.config.get("frequency_mhz"), keep_running=reg.config.get("keep_running") is True), init_routes)
