@@ -41,6 +41,10 @@ _DEVICE_SETTLE_SECS = 0.4
 _START_CHECK_SECS = 1.0
 _START_RETRIES = 3
 
+_RESTART_BACKOFF_SECS = (5.0, 30.0, 120.0)
+_RESTART_MAX_FAILURES = 5
+_RESTART_STABLE_SECS = 300.0
+
 _ERROR_RE = re.compile(
     r"failed|error|cannot|could not|invalid|no supported|usb_",
     re.IGNORECASE,
@@ -56,6 +60,10 @@ class AdsbListener:
         self._stderr_task: Optional[asyncio.Task] = None
         self._poll_task: Optional[asyncio.Task] = None
         self._idle_task: Optional[asyncio.Task] = None
+        self._watch_task: Optional[asyncio.Task] = None
+        self._restart_failures = 0
+        self._restarting = False
+        self.restarts = 0
         self._lock = asyncio.Lock()
         self._last_error: str = ""
         self._last_poll_at: float = 0.0
@@ -82,6 +90,7 @@ class AdsbListener:
         async with self._lock:
             if self.running:
                 return  # already running, idempotent
+            self._restart_failures = 0
             self._metric = metric
             sdr_registry.claim(_OWNER)
             try:
@@ -119,6 +128,8 @@ class AdsbListener:
         return {
             "running": self.running,
             "keep_running": self._keep_running,
+            "restarts": self.restarts,
+            "restarting": self._restarting,
             "aircraft_count": len(self.aircraft),
             "aircraft": self.aircraft,
             "last_error": self._last_error,
@@ -148,6 +159,7 @@ class AdsbListener:
         self._poll_task = loop.create_task(self._poll_loop())
         if not self._keep_running:
             self._idle_task = loop.create_task(self._idle_watchdog())
+        self._watch_task = loop.create_task(self._supervise(self._proc))
         self._last_poll_at = time.monotonic()
 
     async def _start_locked_retrying(self) -> None:
@@ -173,6 +185,7 @@ class AdsbListener:
         await self._start_locked()
 
     async def _stop_locked(self) -> None:
+        self._restarting = False
         await self._stop_locked_no_release()
         sdr_registry.release(_OWNER)
 
@@ -182,7 +195,7 @@ class AdsbListener:
         another listener steal the dongle in between attempts."""
         proc, self._proc = self._proc, None
         current = asyncio.current_task()
-        for attr in ("_stderr_task", "_poll_task", "_idle_task"):
+        for attr in ("_stderr_task", "_poll_task", "_idle_task", "_watch_task"):
             task = getattr(self, attr)
             setattr(self, attr, None)
             if task is not None and task is not current:
@@ -264,6 +277,60 @@ class AdsbListener:
                 logger.debug("dump1090: %s", text)
                 if _ERROR_RE.search(text):
                     self._last_error = text
+        except asyncio.CancelledError:
+            return
+
+    async def _supervise(self, proc: asyncio.subprocess.Process) -> None:
+        """Restart dump1090 if it exits while it's meant to be running.
+
+        A deliberate stop clears ``self._proc`` (and cancels this task)
+        before killing the process, so ``self._proc is not proc`` after the
+        wait means someone else stopped or replaced it: nothing to do.
+        """
+        try:
+            started = time.monotonic()
+            await proc.wait()
+            async with self._lock:
+                if self._proc is not proc:
+                    return
+                if time.monotonic() - started >= _RESTART_STABLE_SECS:
+                    self._restart_failures = 0
+                self._restart_failures += 1
+                self.aircraft = []  # stale snapshot from the dead process
+                reason = self._last_error or f"exit code {proc.returncode}"
+                if self._restart_failures > _RESTART_MAX_FAILURES:
+                    logger.error(
+                        "ADS-B listener: dump1090 exited %d times in a row (%s); giving up",
+                        _RESTART_MAX_FAILURES, reason,
+                    )
+                    await self._stop_locked()
+                    self._last_error = (
+                        f"dump1090 kept exiting ({reason}); press Start to retry"
+                    )
+                    return
+                delay = _RESTART_BACKOFF_SECS[
+                    min(self._restart_failures, len(_RESTART_BACKOFF_SECS)) - 1
+                ]
+                logger.warning(
+                    "ADS-B listener: dump1090 exited unexpectedly (%s); restart %d/%d in %.0fs",
+                    reason, self._restart_failures, _RESTART_MAX_FAILURES, delay,
+                )
+                await self._stop_locked_no_release()  # keep the dongle claimed
+                self._watch_task = asyncio.current_task()
+                self._restarting = True
+            try:
+                await asyncio.sleep(delay)
+            finally:
+                self._restarting = False
+            async with self._lock:
+                if self._proc is not None or sdr_registry.current_owner() != _OWNER:
+                    return  # started again, or stopped (claim released) meanwhile
+                self.restarts += 1
+                try:
+                    await self._start_locked_retrying()
+                except Exception:
+                    logger.exception("ADS-B listener: restart failed")
+                    await self._stop_locked()
         except asyncio.CancelledError:
             return
 

@@ -192,6 +192,8 @@
             if (text) {
                 if (status.running) {
                     text.textContent = 'tracking 1090 MHz';
+                } else if (status.restarting) {
+                    text.textContent = 'dump1090 stopped unexpectedly -- restarting…';
                 } else if (busyOwner) {
                     const labels = { p2000: 'P2000', pagers: 'Pagers', pocsag: 'POCSAG', rtl433: 'RTL433', acars: 'ACARS', dab: 'DAB+', radio: 'Radio' };
                     text.textContent = `busy -- in use by ${labels[busyOwner] || busyOwner}`;
@@ -201,7 +203,7 @@
                     text.textContent = 'idle';
                 }
             }
-            if (startBtn) startBtn.disabled = !!status.running || !!busyOwner;
+            if (startBtn) startBtn.disabled = !!status.running || !!busyOwner || !!status.restarting;
             const metricCb = this._root.querySelector('[data-adsb-metric]');
             if (metricCb) {
                 // Only meaningful before Start -- dump1090's units are fixed
