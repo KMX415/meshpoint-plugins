@@ -163,10 +163,11 @@ class AdsbListener:
         used mid-retry, where we're about to start again and must not let
         another listener steal the dongle in between attempts."""
         proc, self._proc = self._proc, None
+        current = asyncio.current_task()
         for attr in ("_stderr_task", "_poll_task", "_idle_task"):
             task = getattr(self, attr)
             setattr(self, attr, None)
-            if task is not None:
+            if task is not None and task is not current:
                 task.cancel()
         if proc is not None and proc.returncode is None:
             try:
