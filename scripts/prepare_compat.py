@@ -15,6 +15,7 @@ def prepare(core):
     if not (core / 'src/plugins/runtime.py').is_file():
         raise ValueError('Expected a disposable Meshpoint compatibility checkout')
     shutil.copytree(ROOT / 'apps', core / 'apps', dirs_exist_ok=True)
+    shutil.copyfile(ROOT / 'repo.json', core / 'repo.json')
     for name in ('acars', 'dab', 'p2000', 'pagers', 'pocsag', 'rtl433'):
         path = core / f'tests/optional/test_{name}_listener.py'
         text = path.read_text('utf-8')
