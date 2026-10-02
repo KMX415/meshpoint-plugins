@@ -7,7 +7,7 @@
       "id": "acars",
       "kind": "app",
       "path": "apps/acars",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "meshpoint_api": 1,
       "provides": [
         "listener",
@@ -25,7 +25,7 @@
       "id": "adsb",
       "kind": "app",
       "path": "apps/adsb",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "meshpoint_api": 1,
       "provides": [
         "listener",
@@ -43,7 +43,7 @@
       "id": "dab",
       "kind": "app",
       "path": "apps/dab",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "meshpoint_api": 1,
       "provides": [
         "listener",
@@ -61,7 +61,7 @@
       "id": "p2000",
       "kind": "app",
       "path": "apps/p2000",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "meshpoint_api": 1,
       "provides": [
         "listener",
@@ -97,7 +97,7 @@
       "id": "pagers",
       "kind": "app",
       "path": "apps/pagers",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "meshpoint_api": 1,
       "provides": [
         "listener",
@@ -115,7 +115,7 @@
       "id": "pocsag",
       "kind": "app",
       "path": "apps/pocsag",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "meshpoint_api": 1,
       "provides": [
         "listener",
@@ -133,7 +133,7 @@
       "id": "radio",
       "kind": "app",
       "path": "apps/radio",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "meshpoint_api": 1,
       "provides": [
         "listener",
@@ -169,7 +169,7 @@
       "id": "rtl433",
       "kind": "app",
       "path": "apps/rtl433",
-      "version": "1.0.0",
+      "version": "1.2.0",
       "meshpoint_api": 1,
       "provides": [
         "listener",
@@ -187,7 +187,7 @@
       "id": "rtlsdr",
       "kind": "app",
       "path": "apps/rtlsdr",
-      "version": "0.1.0",
+      "version": "0.2.0",
       "meshpoint_api": 1,
       "provides": [
         "sidebar"

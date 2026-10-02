@@ -10,6 +10,10 @@ spec.loader.exec_module(catalog)
 
 
 class CatalogTests(unittest.TestCase):
+    def test_python_cache_is_not_a_plugin(self):
+        (self.root / 'apps/__pycache__').mkdir()
+        self.assertEqual(len(catalog.build_catalog(self.root)['plugins']), 1)
+
     def setUp(self):
         temp = tempfile.TemporaryDirectory()
         self.addCleanup(temp.cleanup)
