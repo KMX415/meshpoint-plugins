@@ -18,3 +18,12 @@ that range does not establish hardware coverage or usable reception. Stop
 before retuning. Page selections last for the running Meshpoint session.
 For a persistent default, configure `plugins.pagers.frequency_mhz`.
 See [receiver regions](../../docs/PLUGINS.md#receiver-regions-and-local-channels).
+
+
+## Unattended listening
+
+Start reception, then enable **Keep running** to continue listening after
+leaving the tab. Administrators can change this setting without a restart;
+it is saved as `plugins.pagers.keep_running`. Turning it off starts
+a fresh 10-minute idle timeout. The setting defaults off and does not start
+reception automatically after a reboot. Stop releases the shared dongle.

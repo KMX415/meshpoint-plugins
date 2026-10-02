@@ -93,7 +93,8 @@ def _parse_line(text: str) -> Optional[dict]:
 class PocsagListener:
     """Owns one rtl_fm|multimon-ng pipeline decoding POCSAG pages."""
 
-    def __init__(self, frequency_mhz=None) -> None:
+    def __init__(self, frequency_mhz=None, keep_running: bool = False) -> None:
+        self._keep_running = keep_running
         self.frequency_hz = None if frequency_mhz is None else self.validate_frequency(frequency_mhz)
         self._proc: Optional[asyncio.subprocess.Process] = None
         self._reader_task: Optional[asyncio.Task] = None
@@ -155,10 +156,26 @@ class PocsagListener:
         self._last_poll_at = time.monotonic()
         return self.status()
 
+    def set_keep_running(self, value: bool) -> None:
+        """Switch keep-running on/off, effective immediately: turning it off
+        while running starts the idle watchdog afresh (counting from now),
+        turning it on cancels a pending one. Call from the event loop."""
+        self._keep_running = bool(value)
+        if not self.running:
+            return
+        if self._keep_running:
+            if self._idle_task is not None:
+                self._idle_task.cancel()
+                self._idle_task = None
+        elif self._idle_task is None:
+            self._last_poll_at = time.monotonic()
+            self._idle_task = asyncio.get_running_loop().create_task(self._idle_watchdog())
+
     def status(self) -> dict:
         return {
             "kind": _OWNER,
             "running": self.running,
+            "keep_running": self._keep_running,
             "frequency_hz": self.frequency_hz,
             "frequency_mhz": self.frequency_hz / 1e6 if self.frequency_hz else None,
             "message_count": len(self.messages),
@@ -192,7 +209,8 @@ class PocsagListener:
         loop = asyncio.get_running_loop()
         self._reader_task = loop.create_task(self._read_loop(self._proc))
         self._stderr_task = loop.create_task(self._stderr_loop(self._proc))
-        self._idle_task = loop.create_task(self._idle_watchdog())
+        if not self._keep_running:
+            self._idle_task = loop.create_task(self._idle_watchdog())
         self._last_poll_at = time.monotonic()
 
     async def _start_locked_retrying(self) -> None:
@@ -226,10 +244,11 @@ class PocsagListener:
         used mid-retry, where we're about to start again and must not let
         another listener steal the dongle in between attempts."""
         proc, self._proc = self._proc, None
+        current = asyncio.current_task()
         for attr in ("_reader_task", "_stderr_task", "_idle_task"):
             task = getattr(self, attr)
             setattr(self, attr, None)
-            if task is not None:
+            if task is not None and task is not current:
                 task.cancel()
         if proc is not None and proc.returncode is None:
             try:

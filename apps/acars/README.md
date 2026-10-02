@@ -17,3 +17,12 @@ channel is silently substituted. The configured `plugins.acars.freqs` list is
 preserved; selections in the running page do not automatically rewrite device
 configuration. Usable simultaneous spacing also depends on the native decoder
 and receiver. Stop before changing channels.
+
+
+## Unattended listening
+
+Start reception, then enable **Keep running** to continue listening after
+leaving the tab. Administrators can change this setting without a restart;
+it is saved as `plugins.acars.keep_running`. Turning it off starts
+a fresh 10-minute idle timeout. The setting defaults off and does not start
+reception automatically after a reboot. Stop releases the shared dongle.

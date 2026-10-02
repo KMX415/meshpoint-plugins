@@ -10,7 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def build_catalog(root=ROOT):
     plugins = []
     for folder in sorted((root / "apps").iterdir()):
-        if not folder.is_dir() or folder.name.startswith("."):
+        if not folder.is_dir() or folder.name.startswith(".") or folder.name == "__pycache__":
             continue
         if folder.is_symlink():
             raise ValueError(f"Plugin directory must not be a symlink: {folder.name}")

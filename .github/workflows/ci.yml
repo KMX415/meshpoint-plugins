@@ -11,6 +11,8 @@ jobs:
     name: Plugin compatibility
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      PYTHONPATH: ${{ github.workspace }}:${{ github.workspace }}/.compat/meshpoint
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
@@ -32,11 +34,12 @@ jobs:
       - name: Validate catalog and source files
         run: |
           python -m unittest discover -s tests
+          node --test tests/*.test.cjs
           python scripts/validate.py --core .compat/meshpoint
           ruff check scripts/ tests/
       - name: Test plugins against pinned Meshpoint core
         run: |
-          rsync -a --delete apps/ .compat/meshpoint/apps/
+          python scripts/prepare_compat.py --core .compat/meshpoint
           cd .compat/meshpoint
           python -m pytest tests/ -q --ignore=tests/test_crypto_service.py --ignore=tests/test_meshtastic_decoder.py --ignore=tests/test_meshcore_decoder.py
           node --test tests/*.test.cjs

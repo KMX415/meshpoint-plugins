@@ -49,6 +49,11 @@
                                     <input type="checkbox" data-adsb-metric checked>
                                     Metric units
                                 </label>
+                                <label class="adsb-metric-toggle"
+                                       title="Keep tracking with this tab closed (no 10-minute auto-stop). Holds the RTL-SDR dongle until you press Stop.">
+                                    <input type="checkbox" data-adsb-keep-running>
+                                    Keep running
+                                </label>
                                 <button class="terminal-button" type="button" data-adsb-start>Start listening</button>
                                 <button class="terminal-button" type="button" data-adsb-stop>Stop</button>
                                 <button class="terminal-button" type="button" data-adsb-map title="Show aircraft on a map" disabled>
@@ -92,6 +97,9 @@
             `;
             this._root.querySelector('[data-adsb-start]').addEventListener('click', () => this._start());
             this._root.querySelector('[data-adsb-stop]').addEventListener('click', () => this._stop());
+            this._root.querySelector('[data-adsb-keep-running]')
+                .addEventListener('change', (e) => this._setKeepRunning(e.target));
+        this._root.querySelector('[data-adsb-keep-running]').disabled = !!window.meshpointReadOnly;
             this._root.querySelector('[data-adsb-map]').addEventListener('click', () => window.AdsbMapModal.show());
             this._root.querySelector('[data-adsb-body]').addEventListener('click', (e) => this._onRowClick(e));
         }
@@ -135,6 +143,29 @@
             this._refresh();
         }
 
+        async _setKeepRunning(box) {
+        if (window.meshpointReadOnly) return;
+            box.disabled = true;
+            try {
+                const res = await fetch(`${this._apiPrefix}/keep-running`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ keep_running: box.checked }),
+                });
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    box.checked = !box.checked;
+                    this._showError(err.detail || `HTTP ${res.status}`);
+                }
+            } catch (e) {
+                box.checked = !box.checked;
+                this._showError(e.message);
+            } finally {
+                box.disabled = !!window.meshpointReadOnly;
+                this._refresh();
+            }
+        }
+
         async _refresh() {
             try {
                 const res = await fetch(`${this._apiPrefix}/status`);
@@ -161,6 +192,8 @@
             if (text) {
                 if (status.running) {
                     text.textContent = 'tracking 1090 MHz';
+                } else if (status.restarting) {
+                    text.textContent = 'dump1090 stopped unexpectedly -- restarting…';
                 } else if (busyOwner) {
                     const labels = { p2000: 'P2000', pagers: 'Pagers', pocsag: 'POCSAG', rtl433: 'RTL433', acars: 'ACARS', dab: 'DAB+', radio: 'Radio' };
                     text.textContent = `busy -- in use by ${labels[busyOwner] || busyOwner}`;
@@ -170,7 +203,7 @@
                     text.textContent = 'idle';
                 }
             }
-            if (startBtn) startBtn.disabled = !!status.running || !!busyOwner;
+            if (startBtn) startBtn.disabled = !!status.running || !!busyOwner || !!status.restarting;
             const metricCb = this._root.querySelector('[data-adsb-metric]');
             if (metricCb) {
                 // Only meaningful before Start -- dump1090's units are fixed
@@ -179,6 +212,9 @@
                 metricCb.disabled = !!status.running || !!busyOwner;
                 if (status.running) metricCb.checked = !!status.metric;
             }
+
+            const keepBox = this._root.querySelector('[data-adsb-keep-running]');
+            if (keepBox && !keepBox.disabled) keepBox.checked = !!status.keep_running;
 
             const countEl = this._root.querySelector('[data-adsb-count]');
             if (countEl) countEl.textContent = status.aircraft_count ? `(${status.aircraft_count})` : '';

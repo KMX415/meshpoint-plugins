@@ -16,7 +16,7 @@ from typing import AsyncIterator, Optional
 
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import StrictBool, BaseModel, Field
 
 from src.api.audit import AuditLogWriter
 from src.api.audit.dependencies import get_audit_writer
@@ -301,3 +301,51 @@ async def dab_scan_stream(
         media_type="application/x-ndjson",
         headers={"Cache-Control": "no-store", "X-Content-Type-Options": "nosniff"},
     )
+
+
+class KeepRunningRequest(BaseModel):
+    keep_running: StrictBool
+
+
+def _persist_keep_running(value: bool) -> None:
+    """Save plugins.dab.keep_running to local.yaml, merged into whatever that
+    section holds on disk right now (save_section_to_yaml only merges one
+    level deep, so writing {"dab": {"keep_running": ...}} alone would
+    drop "enabled" and the plugin's other keys)."""
+    import yaml
+
+    from src.config import _get_local_yaml_path, save_section_to_yaml
+
+    current: dict = {}
+    path = _get_local_yaml_path()
+    if path.exists():
+        with open(path) as fh:
+            data = yaml.safe_load(fh) or {}
+        section = data.get("plugins")
+        if isinstance(section, dict) and isinstance(section.get("dab"), dict):
+            current = dict(section["dab"])
+    current["keep_running"] = bool(value)
+    save_section_to_yaml("plugins", {"dab": current})
+
+
+@router.put("/keep-running")
+async def set_keep_running(
+    req: KeepRunningRequest,
+    _claims: SessionClaims = Depends(require_admin),
+    audit: AuditLogWriter = Depends(get_audit_writer),
+):
+    """Toggle "keep running" (no idle auto-stop) from the tab: saved to
+    local.yaml and applied to the running listener straight away."""
+    if _listener is None:
+        raise HTTPException(503, "Listener not initialised")
+    with audit.timed_action(
+        user=_claims.subject,
+        action="config.plugin_update",
+        params={"plugin_id": "dab", "keep_running": req.keep_running},
+    ):
+        try:
+            _persist_keep_running(req.keep_running)
+        except PermissionError as exc:
+            raise HTTPException(403, str(exc)) from exc
+    _listener.set_keep_running(req.keep_running)
+    return _listener.status()

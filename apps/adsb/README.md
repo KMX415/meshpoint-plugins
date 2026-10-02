@@ -16,3 +16,17 @@ This adapter receives 1090 MHz ADS-B using `dump1090`. It does not document or
 claim 978 MHz UAT support. Use a separate SDR and appropriate antenna. A running
 process is not proof of aircraft reception; native output and displayed aircraft
 remain hardware validation checks.
+
+
+## Unattended listening
+
+Start reception, then enable **Keep running** to continue listening after
+leaving the tab. Administrators can change this setting without a restart;
+it is saved as `plugins.adsb.keep_running`. Turning it off starts
+a fresh 10-minute idle timeout. The setting defaults off and does not start
+reception automatically after a reboot. Stop releases the shared dongle.
+
+If dump1090 exits unexpectedly, the listener retries after 5 seconds,
+30 seconds, then 2 minutes between attempts, up to five restart cycles.
+Five minutes of stable reception resets that budget. Stop cancels a pending
+retry. Repeated failures release the dongle and require a manual Start.
